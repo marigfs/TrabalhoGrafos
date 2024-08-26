@@ -183,7 +183,7 @@ def count_componentes_conexas(self):
                 dfs(neighbor)  # Chama recursivamente o DFS
 
     for v in range(self.vertices):  # Conta o número de componentes conexas
-        if not visited[v]:
+        if not visited[v]: 
             dfs(v)
             count += 1
 
@@ -225,7 +225,7 @@ def count_componentes_fortemente_conexas(self):
 
     visited = [False] * self.vertices
     count = 0
-    while stack:
+    while stack: # Processa os vértices na ordem inversa da pilha de finalização
         v = stack.pop()
         if not visited[v]:
             dfs(v, visited, transposed_graph)  # Segunda passagem de DFS
@@ -246,14 +246,14 @@ def articulacao(self):
     visited = [False] * self.vertices 
     articulation_points = []  # Lista de pontos de articulação
 
-    def dfs(v, parent, visited, low, disc, articulation_points):
+    def dfs(v, parent, visited, low, disc, articulation_points): 
         children = 0
         visited[v] = True
         disc[v] = self.time  # Registra o tempo de descoberta do vértice
         low[v] = self.time  # Inicializa low[v] com o tempo de descoberta
         self.time += 1
 
-        for neighbor in self.adj_list[v]:
+        for neighbor in self.adj_list[v]: # Explora os vizinhos
             if not visited[neighbor]:  # Se o vizinho não foi visitado
                 children += 1
                 parent[neighbor] = v
@@ -269,8 +269,8 @@ def articulacao(self):
                 low[v] = min(low[v], disc[neighbor])  # Atualiza low[v] para vértices visitados
 
     parent = [-1] * self.vertices
-    low = [float('inf')] * self.vertices
-    disc = [float('inf')] * self.vertices
+    low = [float('inf')] * self.vertices # Inicializa low com infinito
+    disc = [float('inf')] * self.vertices # Inicializa disc com infinito
     self.time = 0
 
     for v in range(self.vertices):
@@ -391,8 +391,8 @@ def mst_value(self):
     key[0] = 0  # Começa pelo vértice 0
 
     for _ in range(self.vertices):
-        min_key = float('inf')
-        min_vertex = -1
+        min_key = float('inf') # Inicializa a chave mínima 
+        min_vertex = -1 # Inicializa o vértice mínimo
         for v in range(self.vertices):
             if not visited[v] and key[v] < min_key:
                 min_key = key[v]
@@ -453,10 +453,10 @@ def shortest_path_value(self, source, destination):
 
     priority_queue = [(0, source)]  # Fila de prioridade (min-heap)
 
-    while priority_queue:
+    while priority_queue: # Enquanto a fila não estiver vazia
         current_distance, current_vertex = heapq.heappop(priority_queue)
 
-        if current_distance > distance[current_vertex]:
+        if current_distance > distance[current_vertex]: # Se a distância atual for maior que a armazenada
             continue
 
         for neighbor in self.adj_list[current_vertex]:
@@ -464,7 +464,7 @@ def shortest_path_value(self, source, destination):
                 weight = self.weight[(current_vertex, neighbor)]
                 if distance[current_vertex] + weight < distance[neighbor]:
                     distance[neighbor] = distance[current_vertex] + weight
-                    heapq.heappush(priority_queue, (distance[neighbor], neighbor))
+                    heapq.heappush(priority_queue, (distance[neighbor], neighbor)) # Insere na fila de prioridade
 
     return distance[destination] if distance[destination] != float('inf') else -1  # Retorna a distância ao destino
 
@@ -479,12 +479,12 @@ def max_flow_value(self, source, sink):
     if not self.direcionado:
         return -1  # Retorna -1 para grafos não direcionados
 
-    residual_graph = [[0] * self.vertices for _ in range(self.vertices)]
+    residual_graph = [[0] * self.vertices for _ in range(self.vertices)] # Inicializa o grafo residual
     for u in range(self.vertices):
         for v in self.adj_list[u]:
             residual_graph[u][v] = self.weight[(u, v)]  # Cria o grafo residual
 
-    parent = [-1] * self.vertices
+    parent = [-1] * self.vertices # Inicializa o array de pais
     max_flow = 0
 
     while bfs(self, source, sink, residual_graph, parent):
@@ -492,13 +492,14 @@ def max_flow_value(self, source, sink):
         v = sink
         while v != source:
             u = parent[v]
-            path_flow = min(path_flow, residual_graph[u][v])
+            path_flow = min(path_flow, residual_graph[u][v]) # Encontra o fluxo máximo no caminho
             v = u
 
         v = sink
-        while v != source:
+        
+        while v != source: # Atualiza o grafo residual e encontra o caminho de volta  
             u = parent[v]
-            residual_graph[u][v] -= path_flow
+            residual_graph[u][v] -= path_flow 
             residual_graph[v][u] += path_flow
             v = u
 
@@ -539,11 +540,11 @@ def transitive_closure(self):
     if not self.direcionado:
         return -1  # Retorna -1 para grafos não direcionados
 
-    closure = [[0] * self.vertices for _ in range(self.vertices)]
+    closure = [[0] * self.vertices for _ in range(self.vertices)] 
     for i in range(self.vertices):
         dfs(self, i, i, closure)  # Chama DFS para preencher o fecho transitivo
 
-    reachable_from_zero = [i for i in range(self.vertices) if closure[0][i] == 1 and i != 0]
+    reachable_from_zero = [i for i in range(self.vertices) if closure[0][i] == 1 and i != 0] # Vértices acessíveis a partir de 0 
     return reachable_from_zero  # Retorna a lista de vértices acessíveis a partir de 0
 
 def dfs(self, start, current, closure):
