@@ -1,168 +1,214 @@
-import heapq
-from collections import deque
-#Classe Grafo com as funções de verificação de propriedades de grafos
+import heapq  # Importa a biblioteca heapq para manipulação de filas de prioridade (min-heaps)
+from collections import deque  # Importa deque para manipulação de filas de forma eficiente
+
+# Classe Grafo que implementa um grafo com suas funcionalidades básicas
 class Grafo:   
     def __init__(self, vertices, arestas, direcionado):
-        self.vertices = vertices
-        self.direcionado = direcionado
-        self.adj_list = {i: [] for i in range(vertices)}
-        self.weight = {} 
-        self.id = {}
-        self.arestas = arestas
+        """
+        Inicializa um grafo.
+        :param vertices: Número de vértices no grafo.
+        :param arestas: Lista de arestas, onde cada aresta é representada por uma tupla (id, u, v, peso).
+        :param direcionado: Booleano indicando se o grafo é direcionado ou não.
+        """
+        self.vertices = vertices  # Número de vértices no grafo
+        self.direcionado = direcionado  # Indica se o grafo é direcionado
+        self.adj_list = {i: [] for i in range(vertices)}  # Lista de adjacências, representando o grafo
+        self.weight = {}  # Dicionário para armazenar os pesos das arestas
+        self.id = {}  # Dicionário para armazenar os identificadores das arestas
+        self.arestas = arestas  # Lista de arestas
 
-        for id, u, v, p in arestas: # u -> v com peso p
-            self.adj_list[u].append(v)
-            self.weight[(u, v)] = p
-            self.id[(u, v)] = id
+        # Preenche a lista de adjacências e os dicionários de peso e ID para cada aresta
+        for id, u, v, p in arestas:  # Para cada aresta u -> v com peso p
+            self.adj_list[u].append(v)  # Adiciona v à lista de adjacências de u
+            self.weight[(u, v)] = p  # Armazena o peso da aresta
+            self.id[(u, v)] = id  # Armazena o identificador da aresta
 
-            if not direcionado: # Se o grafo não for direcionado, adicione a aresta v -> u
+            # Se o grafo não for direcionado, adicione também a aresta inversa v -> u
+            if not direcionado:
                 self.adj_list[v].append(u)
                 self.weight[(u, v)] = p
                 self.id[(u, v)] = id
 
-import networkx as nx
-import matplotlib.pyplot as plt
+import networkx as nx  # Importa a biblioteca NetworkX para manipulação e visualização de grafos
+import matplotlib.pyplot as plt  # Importa Matplotlib para visualização de grafos
 
 def desenhar_grafo(grafo):
     """
     Função para desenhar o grafo utilizando a biblioteca NetworkX.
     Se o grafo for direcionado, desenha setas; se houver pesos nas arestas, eles são exibidos.
     """
-    G = nx.DiGraph() if grafo.direcionado else nx.Graph()
+    G = nx.DiGraph() if grafo.direcionado else nx.Graph()  # Cria um grafo direcionado ou não direcionado
 
+    # Adiciona arestas ao grafo NetworkX, incluindo pesos
     for u in grafo.adj_list:
         for v in grafo.adj_list[u]:
             G.add_edge(u, v, weight=grafo.weight.get((u, v), 1))
 
-    pos = nx.spring_layout(G)
-    labels = nx.get_edge_attributes(G, 'weight')
-    nx.draw(G, pos, with_labels=True, node_color='skyblue', node_size=700, font_size=12, font_weight='bold', arrows=grafo.direcionado)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)
-    plt.show()
-
+    pos = nx.spring_layout(G)  # Define a posição dos nós para visualização
+    labels = nx.get_edge_attributes(G, 'weight')  # Obtém os pesos das arestas
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', node_size=700, font_size=12, font_weight='bold', arrows=grafo.direcionado)  # Desenha o grafo
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)  # Adiciona os pesos das arestas como rótulos
+    plt.show()  # Exibe o grafo
 
 def is_conexo(self):
-    # Verifica se o grafo é conexo em grafos não direcionados utilizando o algoritmo de busca em profundidade
+    """
+    Verifica se o grafo não direcionado é conexo.
+    Um grafo é conexo se existe um caminho entre qualquer par de vértices.
+    Implementa uma busca em profundidade (DFS) para verificar a conectividade.
+    :return: 1 se o grafo é conexo, 0 caso contrário, -1 se o grafo for direcionado.
+    """
     if self.direcionado:
-        return -1
-    visited = [False] * self.vertices
+        return -1  # Retorna -1 se o grafo for direcionado, pois o conceito de conectividade aqui é aplicado apenas a grafos não direcionados
 
-    def dfs(v): # Função de busca em profundidade
-        visited[v] = True
-        for neighbor in self.adj_list[v]:
+    visited = [False] * self.vertices  # Lista de verificação de vértices visitados
+
+    def dfs(v):
+        visited[v] = True  # Marca o vértice como visitado
+        for neighbor in self.adj_list[v]:  # Explora todos os vizinhos
             if not visited[neighbor]:
-                dfs(neighbor)
+                dfs(neighbor)  # Chama recursivamente o DFS
 
-    dfs(0)
-    return 1 if all(visited) else 0 # Retorna 1 se todos os vértices foram visitados, caso contrário, retorna 0
+    dfs(0)  # Inicia a DFS a partir do primeiro vértice
+    return 1 if all(visited) else 0  # Se todos os vértices foram visitados, o grafo é conexo
 
 def is_conectividade_fraca(self): 
-    # Verifica a conectividade fraca para grafos direcionados utilizando o algoritmo de busca em profundidade
-    visited = [False] * self.vertices
+    """
+    Verifica a conectividade fraca em grafos direcionados.
+    Um grafo tem conectividade fraca se, ao ignorar as direções das arestas, o grafo resultante é conexo.
+    Implementa uma busca em profundidade (DFS).
+    :return: 1 se o grafo é fracamente conectado, 0 caso contrário.
+    """
+    visited = [False] * self.vertices  # Lista de verificação de vértices visitados
 
-    def dfs(v): # Função de busca em profundidade
-        visited[v] = True
-        for neighbor in self.adj_list[v]:
+    def dfs(v):
+        visited[v] = True  # Marca o vértice como visitado
+        for neighbor in self.adj_list[v]:  # Explora todos os vizinhos
             if not visited[neighbor]:
-                dfs(neighbor)
+                dfs(neighbor)  # Chama recursivamente o DFS
 
-    dfs(0)
-    return 1 if all(visited) else 0 # Retorna 1 se todos os vértices foram visitados, caso contrário, retorna 0
-    
+    dfs(0)  # Inicia a DFS a partir do primeiro vértice
+    return 1 if all(visited) else 0  # Se todos os vértices foram visitados, o grafo é fracamente conectado
+
 def is_bipartido(self): 
-    # Verifica se o grafo é bipartido para grafos não direcionados utilizando o algoritmo de busca em profundidade
+    """
+    Verifica se o grafo não direcionado é bipartido.
+    Um grafo é bipartido se seus vértices podem ser divididos em dois conjuntos, de forma que nenhuma aresta
+    conecte vértices do mesmo conjunto. Utiliza DFS para atribuir cores aos vértices e verificar a bipartição.
+    :return: 1 se o grafo é bipartido, 0 caso contrário, e 0 para grafos direcionados.
+    """
     if self.direcionado:
         return 0  # Grafos direcionados não são considerados bipartidos aqui
 
-    color = [-1] * self.vertices
+    color = [-1] * self.vertices  # Inicializa todas as cores com -1 (não colorido)
 
-    def dfs(v, c): # Função de busca em profundidade
-        color[v] = c
-        for neighbor in self.adj_list[v]:
+    def dfs(v, c):
+        color[v] = c  # Atribui a cor c ao vértice v
+        for neighbor in self.adj_list[v]:  # Explora todos os vizinhos
             if color[neighbor] == -1:
-                if not dfs(neighbor, 1 - c):
+                if not dfs(neighbor, 1 - c):  # Chama recursivamente o DFS com a cor oposta
                     return False
             elif color[neighbor] == c:
-                return False
+                return False  # Se um vizinho tem a mesma cor, o grafo não é bipartido
         return True
 
-    for v in range(self.vertices): # Verifica se o grafo é bipartido
+    for v in range(self.vertices):  # Verifica todos os vértices
         if color[v] == -1:
-            if not dfs(v, 0):
+            if not dfs(v, 0):  # Se algum componente não for bipartido, retorna 0
                 return 0
-    return 1 # Retorna 1 se o grafo for bipartido, caso contrário, retorna 0
+    return 1  # Retorna 1 se o grafo for bipartido
 
 def is_euleriano(self):
-    # Verifica se o grafo é euleriano em grafos não direcionados utilizando o grau dos vértices (teorema de Euler)
+    """
+    Verifica se o grafo não direcionado é Euleriano.
+    Um grafo é Euleriano se é conexo e todos os seus vértices têm grau par.
+    :return: 1 se o grafo é Euleriano, 0 caso contrário, e 0 para grafos direcionados.
+    """
     if self.direcionado:
         return 0  # Grafos direcionados não são considerados Eulerianos aqui
 
-    if not is_conexo(self): # Verifica se o grafo é conexo
+    if not is_conexo(self):  # Um grafo Euleriano deve ser conexo
         return 0
 
-    for v in range(self.vertices): # Verifica se todos os vértices têm grau par
+    for v in range(self.vertices):  # Verifica se todos os vértices têm grau par
         if len(self.adj_list[v]) % 2 != 0:
             return 0
 
-    return 1
+    return 1  # Retorna 1 se o grafo for Euleriano
 
 def has_ciclo(self):
-    # Verifica se o grafo tem um ciclo em grafos não direcionados utilizando o algoritmo de busca em profundidade
-    visited = [False] * self.vertices
+    """
+    Verifica se o grafo tem um ciclo.
+    Um ciclo em um grafo é uma sequência de arestas que formam um caminho fechado.
+    Implementa DFS para detectar ciclos em grafos não direcionados.
+    :return: 1 se o grafo tem ciclo, 0 caso contrário.
+    """
+    visited = [False] * self.vertices  # Lista de verificação de vértices visitados
 
-    def dfs(v, parent): # Função de busca em profundidade
-        visited[v] = True
+    def dfs(v, parent):
+        visited[v] = True  # Marca o vértice como visitado
 
-        for neighbor in self.adj_list[v]: # Verifica se o vértice tem um ciclo
-            if not visited[neighbor]: # Se o vizinho não foi visitado, chame a função recursivamente
-                if dfs(neighbor, v):
+        for neighbor in self.adj_list[v]:  # Explora todos os vizinhos
+            if not visited[neighbor]:  # Se o vizinho não foi visitado
+                if dfs(neighbor, v):  # Chama recursivamente o DFS
                     return True
-            elif neighbor!=parent: # Se o vizinho foi visitado e não é o pai do vértice atual, há um ciclo
+            elif neighbor != parent:  # Se o vizinho foi visitado e não é o pai, há um ciclo
                 return True
 
-        return False # Retorna False se não houver ciclo
+        return False
 
-    for v in range(self.vertices): # Verifica se o grafo tem um ciclo
+    for v in range(self.vertices):  # Verifica se o grafo tem um ciclo
         if not visited[v]:
             if dfs(v, -1):
-                return 1 # Retorna 1 se houver um ciclo
+                return 1  # Retorna 1 se houver um ciclo
 
-    return 0 # Retorna 0 se não houver ciclo
+    return 0  # Retorna 0 se não houver ciclo
 
 def count_componentes_conexas(self):
-    # Conta o número de componentes conexas em grafos não direcionados utilizando o algoritmo de busca em profundidade
-    if self.direcionado: # Se o grafo for direcionado, retorne -1
-        return -1
-    visited = [False] * self.vertices
-    count = 0
+    """
+    Conta o número de componentes conexas em grafos não direcionados.
+    Uma componente conexa é um subgrafo onde há um caminho entre qualquer par de vértices.
+    Implementa DFS para contar as componentes conexas.
+    :return: Número de componentes conexas, ou -1 se o grafo for direcionado.
+    """
+    if self.direcionado:
+        return -1  # Retorna -1 para grafos direcionados
 
-    def dfs(v): # Função de busca em profundidade
-        visited[v] = True
-        for neighbor in self.adj_list[v]: 
+    visited = [False] * self.vertices  # Lista de verificação de vértices visitados
+    count = 0  # Contador de componentes conexas
+
+    def dfs(v):
+        visited[v] = True  # Marca o vértice como visitado
+        for neighbor in self.adj_list[v]:  # Explora todos os vizinhos
             if not visited[neighbor]:
-                dfs(neighbor)
+                dfs(neighbor)  # Chama recursivamente o DFS
 
-    for v in range(self.vertices): # Conta o número de componentes conexas
+    for v in range(self.vertices):  # Conta o número de componentes conexas
         if not visited[v]:
             dfs(v)
             count += 1
 
-    return count # Retorna o número de componentes conexas
+    return count  # Retorna o número de componentes conexas
 
 def count_componentes_fortemente_conexas(self):
-    # Conta o número de componentes fortemente conectadas em grafos direcionados utilizando o algoritmo de Kosaraju
-    if not self.direcionado: # Se o grafo não for direcionado, retorne -1
-        return -1
+    """
+    Conta o número de componentes fortemente conectadas em grafos direcionados.
+    Uma componente fortemente conectada é um subgrafo onde há um caminho entre qualquer par de vértices no sentido das arestas.
+    Implementa o algoritmo de Kosaraju para encontrar as componentes fortemente conectadas.
+    :return: Número de componentes fortemente conectadas, ou -1 se o grafo não for direcionado.
+    """
+    if not self.direcionado:
+        return -1  # Retorna -1 para grafos não direcionados
 
-    def dfs(v, visited, adj_list, stack=None): # Função de busca em profundidade
-        visited[v] = True
-        for neighbor in adj_list[v]:
+    def dfs(v, visited, adj_list, stack=None):
+        visited[v] = True  # Marca o vértice como visitado
+        for neighbor in adj_list[v]:  # Explora todos os vizinhos
             if not visited[neighbor]:
                 dfs(neighbor, visited, adj_list, stack)
         if stack is not None:
-            stack.append(v)
+            stack.append(v)  # Adiciona o vértice à pilha de finalização
 
-    def transpose_graph(): # Transpõe o grafo para encontrar o grafo transposto
+    def transpose_graph():
+        # Transpõe o grafo, invertendo as direções das arestas
         transposed = [[] for _ in range(self.vertices)]
         for v in range(self.vertices): 
             for neighbor in self.adj_list[v]:
@@ -171,284 +217,310 @@ def count_componentes_fortemente_conexas(self):
 
     visited = [False] * self.vertices
     stack = []
-    for v in range(self.vertices): # Encontra a ordem de finalização dos vértices
+    for v in range(self.vertices):
         if not visited[v]:
-            dfs(v, visited, self.adj_list, stack)
+            dfs(v, visited, self.adj_list, stack)  # Primeira passagem de DFS
 
-    transposed_graph = transpose_graph()
+    transposed_graph = transpose_graph()  # Grafo transposto
 
     visited = [False] * self.vertices
     count = 0
-    while stack: # Conta o número de componentes fortemente conectadas
+    while stack:
         v = stack.pop()
         if not visited[v]:
-            dfs(v, visited, transposed_graph)
-            count += 1
+            dfs(v, visited, transposed_graph)  # Segunda passagem de DFS
+            count += 1  # Incrementa o contador para cada componente fortemente conectada
 
-    return count # Retorna o número de componentes fortemente conectadas
+    return count  # Retorna o número de componentes fortemente conectadas
 
 def articulacao(self):
-    # Retorna os pontos de articulação em grafos não direcionados utilizando Tarjan 
-    if self.direcionado: # Se o grafo for direcionado, retorne -1
-        return -1
+    """
+    Encontra e retorna os pontos de articulação em grafos não direcionados.
+    Um ponto de articulação é um vértice que, se removido, aumenta o número de componentes conexas.
+    Implementa o algoritmo de Tarjan para encontrar os pontos de articulação.
+    :return: Lista de pontos de articulação, ou -1 se o grafo for direcionado.
+    """
+    if self.direcionado:
+        return -1  # Retorna -1 para grafos direcionados
 
     visited = [False] * self.vertices 
-    articulation_points = []
-    articulation_points.append(0)
+    articulation_points = []  # Lista de pontos de articulação
 
-    def dfs(v, parent, visited, low, disc, articulation_points): # Função de busca em profundidade
+    def dfs(v, parent, visited, low, disc, articulation_points):
         children = 0
         visited[v] = True
-        disc[v] = self.time
-        low[v] = self.time
+        disc[v] = self.time  # Registra o tempo de descoberta do vértice
+        low[v] = self.time  # Inicializa low[v] com o tempo de descoberta
         self.time += 1
 
-        for neighbor in self.adj_list[v]: # Verifica se o vértice é um ponto de articulação
-            if not visited[neighbor]: # Se o vizinho não foi visitado, chame a função recursivamente
+        for neighbor in self.adj_list[v]:
+            if not visited[neighbor]:  # Se o vizinho não foi visitado
                 children += 1
                 parent[neighbor] = v
                 dfs(neighbor, parent, visited, low, disc, articulation_points)
-                low[v] = min(low[v], low[neighbor])
-                if parent[v] == -1 and children > 1: # Se o vértice é a raiz da árvore DFS e tem mais de um filho, é um ponto de articulação
+                low[v] = min(low[v], low[neighbor])  # Atualiza low[v]
+
+                # Condições para identificar um ponto de articulação
+                if parent[v] == -1 and children > 1:  # Raiz com mais de um filho
                     articulation_points.append(v)
-                elif parent[v] != -1 and low[neighbor] >= disc[v]: # Se o vértice não é a raiz da árvore DFS e o valor de low do vizinho é maior ou igual ao valor de descoberta do vértice atual, é um ponto de articulação
+                elif parent[v] != -1 and low[neighbor] >= disc[v]:  # Vértice com um low alto
                     articulation_points.append(v)
-            elif neighbor != parent[v]: # Se o vizinho foi visitado e não é o pai do vértice atual, atualize o valor de low
-                low[v] = min(low[v], disc[neighbor])
+            elif neighbor != parent[v]:
+                low[v] = min(low[v], disc[neighbor])  # Atualiza low[v] para vértices visitados
 
     parent = [-1] * self.vertices
-    visited = [False] * self.vertices
     low = [float('inf')] * self.vertices
     disc = [float('inf')] * self.vertices
     self.time = 0
 
-    for v in range(self.vertices): # Encontra os pontos de articulação
+    for v in range(self.vertices):
         if not visited[v]:
             dfs(v, parent, visited, low, disc, articulation_points)
 
-    return articulation_points # Retorna os pontos de articulação
+    return articulation_points  # Retorna a lista de pontos de articulação
 
 def count_arestas_ponte(self):
-    # Conta o número de arestas ponte em grafos não direcionados
+    """
+    Conta o número de arestas ponte em grafos não direcionados.
+    Uma aresta ponte é aquela que, se removida, aumenta o número de componentes conexas.
+    Implementa o algoritmo de Tarjan para encontrar as arestas ponte.
+    :return: Número de arestas ponte, ou -1 se o grafo for direcionado.
+    """
     if self.direcionado:
-        return -1
-    count = 0
+        return -1  # Retorna -1 para grafos direcionados
 
-    def dfs(v, parent, visited, low, disc): # Função de busca em profundidade
+    count = 0  # Contador de arestas ponte
+
+    def dfs(v, parent, visited, low, disc):
         nonlocal count
         visited[v] = True
-        disc[v] = self.time
-        low[v] = self.time
+        disc[v] = self.time  # Registra o tempo de descoberta do vértice
+        low[v] = self.time  # Inicializa low[v] com o tempo de descoberta
         self.time += 1
 
-        for neighbor in self.adj_list[v]: # Verifica se a aresta é uma aresta ponte
-            if not visited[neighbor]: # Se o vizinho não foi visitado, chame a função recursivamente
+        for neighbor in self.adj_list[v]:
+            if not visited[neighbor]:  # Se o vizinho não foi visitado
                 parent[neighbor] = v
                 dfs(neighbor, parent, visited, low, disc)
-                low[v] = min(low[v], low[neighbor])
-                if low[neighbor] > disc[v]: # Se o valor de low do vizinho é maior que o valor de descoberta do vértice atual, a aresta é uma aresta ponte
-                    count += 1
-            elif neighbor != parent[v]: # Se o vizinho foi visitado e não é o pai do vértice atual, atualize o valor de low
-                low[v] = min(low[v], disc[neighbor])
+                low[v] = min(low[v], low[neighbor])  # Atualiza low[v]
+
+                if low[neighbor] > disc[v]:  # Se o low do vizinho é maior que o discovery time do vértice atual
+                    count += 1  # A aresta é uma ponte
+            elif neighbor != parent[v]:
+                low[v] = min(low[v], disc[neighbor])  # Atualiza low[v] para vértices visitados
 
     parent = [-1] * self.vertices
-    visited = [False] * self.vertices
     low = [float('inf')] * self.vertices
     disc = [float('inf')] * self.vertices
+    visited = [False] * self.vertices
     self.time = 0
 
-    for v in range(self.vertices): # Conta o número de arestas ponte
+    for v in range(self.vertices):
         if not visited[v]:
             dfs(v, parent, visited, low, disc)
 
-    return count # Retorna o número de arestas ponte
+    return count  # Retorna o número de arestas ponte
 
 def dfs_tree(self):
-    # Retorna a árvore DFS do grafo com base nos identificadores das arestas
-    visited = [False] * self.vertices
-    dfs_tree = []
+    """
+    Gera e retorna a árvore DFS do grafo com base nos identificadores das arestas.
+    :return: Lista de identificadores de arestas que compõem a árvore DFS.
+    """
+    visited = [False] * self.vertices  # Lista de verificação de vértices visitados
+    dfs_tree = []  # Lista para armazenar as arestas da árvore DFS
 
-    def dfs(v): # Função de busca em profundidade
-        visited[v] = True
+    def dfs(v):
+        visited[v] = True  # Marca o vértice como visitado
 
-        for neighbor in self.adj_list[v]: # Explora os vizinhos na ordem lexicográfica
+        for neighbor in self.adj_list[v]:  # Explora os vizinhos
             if not visited[neighbor]:
-                # Encontrar o identificador da aresta entre v e neighbor
-                for aresta in self.arestas: # Verifica se a aresta foi visitada
+                for aresta in self.arestas:  # Encontra o identificador da aresta entre v e neighbor
                     id_aresta = aresta[0]
-                    ligacao_v1 = aresta[1] 
+                    ligacao_v1 = aresta[1]
                     ligacao_v2 = aresta[2]
-                    if (ligacao_v1 == v and ligacao_v2 == neighbor) or (ligacao_v1 == neighbor and ligacao_v2 == v): # Se a aresta for encontrada, adicione-a à árvore DFS
-                        dfs_tree.append(id_aresta)
-                        break  # Aresta correspondente encontrada, parar a busca
-                dfs(neighbor) # Chama a função recursivamente
+                    if (ligacao_v1 == v and ligacao_v2 == neighbor) or (ligacao_v1 == neighbor and ligacao_v2 == v):
+                        dfs_tree.append(id_aresta)  # Adiciona a aresta à árvore DFS
+                        break  # Para a busca, pois a aresta correspondente foi encontrada
+                dfs(neighbor)  # Chama recursivamente o DFS
 
-    for v in range(self.vertices): # Encontra a árvore DFS
+    for v in range(self.vertices):
         if not visited[v]:
             dfs(v)
 
-    return dfs_tree # Retorna a árvore DFS
- 
+    return dfs_tree  # Retorna a árvore DFS
 
 def bfs_tree(grafo):
-    # Retorna a árvore BFS do grafo com base nos identificadores das arestas
-    visited = [False] * grafo.vertices  # Verificação de vértices visitados
-    bfs_tree = []
+    """
+    Gera e retorna a árvore BFS do grafo com base nos identificadores das arestas.
+    :return: Lista de identificadores de arestas que compõem a árvore BFS.
+    """
+    visited = [False] * grafo.vertices  # Lista de verificação de vértices visitados
+    bfs_tree = []  # Lista para armazenar as arestas da árvore BFS
     queue = [0]  # Fila para a BFS, começando pelo vértice 0
-    visited[0] = True  # Marcar o vértice 0 como visitado
-    
+    visited[0] = True  # Marca o vértice 0 como visitado
 
     while queue:
         vertex = queue.pop(0)
 
-        # Explorar os vizinhos na ordem lexicográfica
-        for neighbor in grafo.adj_list[vertex]:
+        for neighbor in grafo.adj_list[vertex]:  # Explora os vizinhos
             if not visited[neighbor]:
                 visited[neighbor] = True
                 queue.append(neighbor)
-                # Encontrar o identificador da aresta entre vertex e neighbor
-                for aresta in grafo.arestas:
-                        id_aresta = aresta[0]
-                        ligacao_v1 = aresta[1] 
-                        ligacao_v2 = aresta[2]
-                        
-                        if (ligacao_v1 == vertex and ligacao_v2 == neighbor) or (ligacao_v1 == neighbor and ligacao_v2 == vertex): # Se a aresta for encontrada, adicione-a à árvore BFS
-                            bfs_tree.append(id_aresta)
-                            break
-    return bfs_tree # Retorna a árvore BFS
+                for aresta in grafo.arestas:  # Encontra o identificador da aresta entre vertex e neighbor
+                    id_aresta = aresta[0]
+                    ligacao_v1 = aresta[1]
+                    ligacao_v2 = aresta[2]
+                    if (ligacao_v1 == vertex and ligacao_v2 == neighbor) or (ligacao_v1 == neighbor and ligacao_v2 == vertex):
+                        bfs_tree.append(id_aresta)  # Adiciona a aresta à árvore BFS
+                        break
 
-
+    return bfs_tree  # Retorna a árvore BFS
 
 def mst_value(self):
-    # Calcula o valor da Arvore Geradora Mínima para grafos não direcionados
+    """
+    Calcula o valor da Árvore Geradora Mínima (MST) para grafos não direcionados.
+    Utiliza uma versão do algoritmo de Prim para encontrar a MST.
+    :return: Valor da MST, ou -1 se o grafo for direcionado ou desconectado.
+    """
     if self.direcionado:
-        return -1
+        return -1  # Retorna -1 para grafos direcionados
 
-    mst_value = 0
-    visited = [False] * self.vertices
-    key = [float('inf')] * self.vertices
-    key[0] = 0
+    mst_value = 0  # Inicializa o valor da MST
+    visited = [False] * self.vertices  # Lista de verificação de vértices visitados
+    key = [float('inf')] * self.vertices  # Inicializa as chaves com infinito
+    key[0] = 0  # Começa pelo vértice 0
 
     for _ in range(self.vertices):
-        # Encontra o vértice não visitado com a menor chave
         min_key = float('inf')
         min_vertex = -1
-        for v in range(self.vertices): 
+        for v in range(self.vertices):
             if not visited[v] and key[v] < min_key:
                 min_key = key[v]
                 min_vertex = v
 
-        # Se min_vertex é -1, o grafo não é totalmente conectado
         if min_vertex == -1:
-            return -1  # Grafo desconectado
+            return -1  # Se não há vértice mínimo, o grafo não é totalmente conectado
 
         visited[min_vertex] = True
-        mst_value += key[min_vertex]
+        mst_value += key[min_vertex]  # Adiciona o valor da aresta à MST
 
-        # Atualiza a chave dos vizinhos
         for neighbor in self.adj_list[min_vertex]:
-            # Verifique se a aresta (min_vertex, neighbor) existe
-            if (min_vertex, neighbor) in self.weight:
+            if (min_vertex, neighbor) in self.weight:  # Verifica se a aresta existe
                 weight = self.weight[(min_vertex, neighbor)]
                 if not visited[neighbor] and weight < key[neighbor]:
-                    key[neighbor] = weight
+                    key[neighbor] = weight  # Atualiza a chave para o vizinho
 
-    # Retorna o valor da Arvore Geradora Minima
-    return mst_value if all(visited) else -1
-
+    return mst_value if all(visited) else -1  # Retorna o valor da MST
 
 def topological_sort(self):
-    # Retorna a ordenação topológica para grafos direcionados
+    """
+    Retorna a ordenação topológica para grafos direcionados.
+    A ordenação topológica é possível apenas em DAGs (grafos direcionados acíclicos).
+    :return: Lista com a ordenação topológica ou -1 se o grafo tiver ciclos ou não for direcionado.
+    """
     if not self.direcionado:
-        return -1
+        return -1  # Retorna -1 para grafos não direcionados
     
-    if has_ciclo(self) == 1: # Se o grafo tiver um ciclo, retorne -1
-        return -1 
+    if has_ciclo(self) == 1:
+        return -1  # Se o grafo tiver ciclos, a ordenação topológica não é possível
 
     visited = [False] * self.vertices
     stack = []
 
-    def dfs(v): # Função de busca em profundidade
+    def dfs(v):
         visited[v] = True
         for neighbor in self.adj_list[v]:
             if not visited[neighbor]:
                 dfs(neighbor)
-        stack.append(v)
+        stack.append(v)  # Adiciona o vértice à pilha
 
-    for v in range(self.vertices): # Encontra a ordenação topológica
+    for v in range(self.vertices):
         if not visited[v]:
             dfs(v)
-    # Retorna a ordenação topológica
-    return stack[::-1]
+
+    return stack[::-1]  # Retorna a lista na ordem inversa para a ordenação topológica
 
 def shortest_path_value(self, source, destination):
-    # Inicializa o array de distâncias com infinito para todos os vértices, exceto o source
-    distance = [float('inf')] * self.vertices
-    distance[source] = 0
+    """
+    Calcula o valor do caminho mais curto entre dois vértices.
+    Utiliza o algoritmo de Dijkstra para encontrar o caminho mais curto.
+    :param source: Vértice de origem.
+    :param destination: Vértice de destino.
+    :return: Valor do caminho mais curto ou -1 se o destino não for alcançável.
+    """
+    distance = [float('inf')] * self.vertices  # Inicializa as distâncias com infinito
+    distance[source] = 0  # A distância do vértice de origem para ele mesmo é 0
 
-    # Usamos uma fila de prioridade (min-heap) para obter o vértice com a menor distância atual
-    priority_queue = [(0, source)]  # (distância, vértice)
+    priority_queue = [(0, source)]  # Fila de prioridade (min-heap)
 
     while priority_queue:
         current_distance, current_vertex = heapq.heappop(priority_queue)
 
-        # Se a distância atual do heap for maior que a armazenada, ignore
         if current_distance > distance[current_vertex]:
             continue
 
-        # Atualiza as distâncias para os vizinhos
         for neighbor in self.adj_list[current_vertex]:
-            # Acesse o peso da aresta correta usando a chave (current_vertex, neighbor)
-            if (current_vertex, neighbor) in self.weight:
+            if (current_vertex, neighbor) in self.weight:  # Verifica se a aresta existe
                 weight = self.weight[(current_vertex, neighbor)]
                 if distance[current_vertex] + weight < distance[neighbor]:
                     distance[neighbor] = distance[current_vertex] + weight
                     heapq.heappush(priority_queue, (distance[neighbor], neighbor))
 
-    # Retorna a distância do source ao destino, ou -1 se o destino não for alcançável
-    return distance[destination] if distance[destination] != float('inf') else -1
-
-
+    return distance[destination] if distance[destination] != float('inf') else -1  # Retorna a distância ao destino
 
 def max_flow_value(self, source, sink):
-    # Calcula o valor do fluxo máximo em grafos direcionados
+    """
+    Calcula o valor do fluxo máximo em grafos direcionados.
+    Utiliza o algoritmo de Edmonds-Karp, uma implementação do algoritmo de Ford-Fulkerson.
+    :param source: Vértice de origem.
+    :param sink: Vértice de destino.
+    :return: Valor do fluxo máximo ou -1 se o grafo não for direcionado.
+    """
     if not self.direcionado:
-        return -1
+        return -1  # Retorna -1 para grafos não direcionados
 
-    residual_graph = [[0] * self.vertices for _ in range(self.vertices)] # Inicializa o grafo residual
-    for u in range(self.vertices): # Preenche o grafo residual
+    residual_graph = [[0] * self.vertices for _ in range(self.vertices)]
+    for u in range(self.vertices):
         for v in self.adj_list[u]:
-            residual_graph[u][v] = self.weight[(u, v)]
+            residual_graph[u][v] = self.weight[(u, v)]  # Cria o grafo residual
 
     parent = [-1] * self.vertices
     max_flow = 0
 
-    while bfs(self, source, sink, residual_graph, parent): # Enquanto houver um caminho de source a sink no grafo residual
+    while bfs(self, source, sink, residual_graph, parent):
         path_flow = float('inf')
         v = sink
-        while v != source: # Encontra o fluxo máximo no caminho encontrado
+        while v != source:
             u = parent[v]
             path_flow = min(path_flow, residual_graph[u][v])
             v = u
 
         v = sink
-        while v != source: # Atualiza o grafo residual
+        while v != source:
             u = parent[v]
             residual_graph[u][v] -= path_flow
             residual_graph[v][u] += path_flow
             v = u
 
-        max_flow += path_flow # Adiciona o fluxo máximo do caminho ao fluxo total
+        max_flow += path_flow
 
-    return max_flow # Retorna o valor do fluxo máximo
+    return max_flow  # Retorna o valor do fluxo máximo
 
-def bfs(self, source, sink, residual_graph, parent): # Função de busca em largura
+def bfs(self, source, sink, residual_graph, parent):
+    """
+    Implementa uma busca em largura (BFS) para encontrar um caminho aumentante no grafo residual.
+    :param source: Vértice de origem.
+    :param sink: Vértice de destino.
+    :param residual_graph: Grafo residual.
+    :param parent: Array para armazenar o caminho encontrado.
+    :return: True se houver um caminho, False caso contrário.
+    """
     visited = [False] * self.vertices
     queue = []
     queue.append(source)
     visited[source] = True
 
-    while queue: # Encontra o caminho de source a sink no grafo residual
+    while queue:
         u = queue.pop(0)
         for v in range(self.vertices):
             if not visited[v] and residual_graph[u][v] > 0:
@@ -456,73 +528,92 @@ def bfs(self, source, sink, residual_graph, parent): # Função de busca em larg
                 visited[v] = True
                 parent[v] = u
 
-    return visited[sink] # Retorna True se houver um caminho de source a sink no grafo residual, caso contrário, retorna False
+    return visited[sink]  # Retorna True se houver um caminho aumentante
 
 def transitive_closure(self):
-    # Retorna o fecho transitivo para grafos direcionados
-    if not self.direcionado: # Se o grafo não for direcionado, retorne -1
-        return -1
+    """
+    Calcula o fecho transitivo do grafo direcionado.
+    O fecho transitivo de um grafo é o menor grafo em que há uma aresta direta de u para v sempre que há um caminho de u para v.
+    :return: Lista de vértices acessíveis a partir do vértice 0, ou -1 se o grafo não for direcionado.
+    """
+    if not self.direcionado:
+        return -1  # Retorna -1 para grafos não direcionados
 
-    closure = [[0] * self.vertices for _ in range(self.vertices)] # Inicializa o fecho transitivo
-    for i in range(self.vertices): # Preenche o fecho transitivo
-        dfs(self, i, i, closure)
-    # Gera a lista dos vértices acessíveis a partir do vértice 0
-    reachable_from_zero = [i for i in range(self.vertices) if closure[0][i] == 1 and i != 0] # Retorna o fecho transitivo
-    return reachable_from_zero
+    closure = [[0] * self.vertices for _ in range(self.vertices)]
+    for i in range(self.vertices):
+        dfs(self, i, i, closure)  # Chama DFS para preencher o fecho transitivo
 
-def dfs(self, start, current, closure): # Função de busca em profundidade
-    closure[start][current] = 1
+    reachable_from_zero = [i for i in range(self.vertices) if closure[0][i] == 1 and i != 0]
+    return reachable_from_zero  # Retorna a lista de vértices acessíveis a partir de 0
+
+def dfs(self, start, current, closure):
+    """
+    Função auxiliar para a DFS utilizada no cálculo do fecho transitivo.
+    :param start: Vértice de início.
+    :param current: Vértice atual.
+    :param closure: Matriz do fecho transitivo.
+    """
+    closure[start][current] = 1  # Marca que current é acessível a partir de start
     for neighbor in self.adj_list[current]:
         if closure[start][neighbor] == 0:
             dfs(self, start, neighbor, closure)
 
 def ler_grafo_do_exemplo(): 
-    while True: # Loop para ler os dados de entrada
+    """
+    Lê o grafo de um exemplo fornecido pelo usuário.
+    :return: Objeto Grafo construído com os dados fornecidos.
+    """
+    while True:
         try:
-            dados_entrada = [] # Lista para armazenar os dados de entrada
-            linha = input().strip() # Lê a primeira linha
-            dados_entrada.append(linha) # Adiciona a primeira linha à lista
+            dados_entrada = []  # Lista para armazenar os dados de entrada
+            linha = input().strip()
+            dados_entrada.append(linha)
 
-            id_maximo_vertice, num_arestas = map(int, linha.split()) # Lê o número máximo de vértices e o número de arestas
-            linha = input().strip() # Lê a segunda linha
-            dados_entrada.append(linha) # Adiciona a segunda linha à lista
+            id_maximo_vertice, num_arestas = map(int, linha.split())  # Lê o número máximo de vértices e arestas
+            linha = input().strip()
+            dados_entrada.append(linha)
 
-            for _ in range(num_arestas): # Lê as arestas
-                linha = input().strip() # Lê as arestas
-                dados_entrada.append(linha) # Adiciona as arestas à lista
+            for _ in range(num_arestas):
+                linha = input().strip()
+                dados_entrada.append(linha)
 
-            linhas = dados_entrada # Atribui a lista de dados de entrada à variável linhas
-            direcionado = linhas[1].strip().lower() # Verifica se o grafo é direcionado ou não
+            linhas = dados_entrada
+            direcionado = linhas[1].strip().lower()  # Lê se o grafo é direcionado ou não
 
             if direcionado not in ['direcionado', 'nao_direcionado']:
                 raise ValueError("Formato inválido! A segunda linha deve conter 'direcionado' ou 'nao_direcionado'.")
             
-            if direcionado == 'direcionado': # Se o grafo for direcionado, direcionado = True, caso contrário, direcionado = False
-                direcionado = True
-            else:
-                direcionado = False
+            direcionado = True if direcionado == 'direcionado' else False
             arestas = []
 
-            for linha in linhas[2:]: # Lê as arestas
-                partes = list(filter(None, linha.split())) # Separa a linha em partes
-                id = int(partes[0]) # Atribui o identificador da aresta
-                u, v, p = int(partes[1]), int(partes[2]), int(partes[3]) # Atribui os vértices e o peso da aresta
-                arestas.append((id, u, v, p)) # Adiciona a aresta à lista de arestas
+            for linha in linhas[2:]:
+                partes = list(filter(None, linha.split()))  # Separa a linha em partes
+                id = int(partes[0])
+                u, v, p = int(partes[1]), int(partes[2]), int(partes[3])
+                arestas.append((id, u, v, p))
 
             num_vertices = id_maximo_vertice 
-            return Grafo(num_vertices, arestas, direcionado) # Retorna o grafo
+            return Grafo(num_vertices, arestas, direcionado)  # Retorna o grafo
 
         except ValueError as ve:
             print(f"\nErro: {ve}")
             print("Por favor, insira os dados novamente no formato correto.\n")
 
-def perguntar_funcoes_ao_usuario(): # Função para perguntar ao usuário as funções a serem executadas
+def perguntar_funcoes_ao_usuario():
+    """
+    Pergunta ao usuário quais funções ele deseja executar no grafo.
+    :return: Lista de números que representam as funções escolhidas.
+    """
     entrada_funcoes = input("").split()
-    numeros_funcoes = list(map(int, entrada_funcoes)) # Converte os números de entrada em inteiros
+    numeros_funcoes = list(map(int, entrada_funcoes))  # Converte a entrada em uma lista de inteiros
     return numeros_funcoes
 
-def executar_funcoes(grafo, funcoes): # Função para executar as funções escolhidas pelo usuário
-
+def executar_funcoes(grafo, funcoes):
+    """
+    Executa as funções escolhidas pelo usuário no grafo.
+    :param grafo: O objeto Grafo sobre o qual as funções serão executadas.
+    :param funcoes: Lista de funções a serem executadas.
+    """
     for funcao in funcoes:
         if funcao == 0:
             print(1 if is_conexo(grafo) else 0)
@@ -552,7 +643,7 @@ def executar_funcoes(grafo, funcoes): # Função para executar as funções esco
         elif funcao == 10:
             print(mst_value(grafo))
         elif funcao == 11:
-            ordenacao = topological_sort(grafo) # Ordenação topológica
+            ordenacao = topological_sort(grafo)  # Ordenação topológica
             print(" ".join(map(str, ordenacao)) if isinstance(ordenacao, list) else "-1")
         elif funcao == 12:
             caminho_minimo_valor = shortest_path_value(grafo, 0, grafo.vertices - 1)
@@ -564,12 +655,15 @@ def executar_funcoes(grafo, funcoes): # Função para executar as funções esco
             fecho_transitivo_resultado = ((" ".join(map(str,transitive_closure(grafo)))) if isinstance(transitive_closure(grafo), list) else "-1")
             print(fecho_transitivo_resultado)
 
-def main(): # Função principal
-    funcoes = perguntar_funcoes_ao_usuario() # Pergunta ao usuário as funções a serem executadas
-    grafo = ler_grafo_do_exemplo() # Lê o grafo do exemplo
-    executar_funcoes(grafo, funcoes) # Executa as funções escolhidas pelo usuário
-    # Desenhar o grafo
-    desenhar_grafo(grafo)
+def main():
+    """
+    Função principal que gerencia a execução do programa.
+    Pergunta ao usuário quais funções executar, lê o grafo de exemplo e executa as funções.
+    """
+    funcoes = perguntar_funcoes_ao_usuario()  # Pergunta ao usuário as funções a serem executadas
+    grafo = ler_grafo_do_exemplo()  # Lê o grafo do exemplo
+    executar_funcoes(grafo, funcoes)  # Executa as funções escolhidas pelo usuário
+    desenhar_grafo(grafo)  # Desenha o grafo
 
-if __name__ == "__main__": # Chama a função principal
+if __name__ == "__main__":
     main()
